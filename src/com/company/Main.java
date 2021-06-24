@@ -9,13 +9,71 @@ public class Main {
     public static HashMap<String,ArrayList<ArrayList<String>>> grammarMap=new HashMap<>();
     public static HashMap<String,ArrayList<String>> firstCollection=new HashMap<>();
     public static HashMap<String,ArrayList<String>> followCollection=new HashMap<>();
+    public static HashMap<Integer,ArrayList<String>> selectCollection=new HashMap<>();
+    public static ArrayList<ArrayList<String>> selectGrammar=new ArrayList<>();
+    public static HashMap<String,HashMap<String,ArrayList<String>>> analyzeTable =new HashMap<>();
 
     public static void main(String[] args) {
 	// GrammaticalAnalysis
         getInput();
         grammarChange();
         initGrammarMap();
-        firstAndFollow();
+        firstFollowSelect();
+    // Analyze
+        Analyze();
+    }
+
+    public static void Analyze(){
+        System.out.println("输入待分析队列:(以#结尾)");
+        Stack<String> seq=new Stack<>();
+        seq.push("$");
+        ArrayList<String> input=new ArrayList<>();
+        while (sin.hasNext()){
+            String getted=sin.next();
+            if(!getted.equals("#")){
+                input.add(getted);
+            }else break;
+        }
+        System.out.println();
+        for (int i = input.size() - 1; i >= 0; i--) {
+            seq.push(input.get(i));
+        }
+        Stack<String> stack=new Stack<>();
+        stack.push("$");
+        stack.push(grammar.get(0).get(0));
+        System.out.println(stack+"---------"+seq);
+        while (!seq.empty()&&!stack.empty()){
+            if(stack.peek().equals("$")&&stack.peek().equals(seq.peek())){
+                stack.pop();
+                seq.pop();
+                System.out.println("分析成功！");
+                break;
+            }
+            while (stack.peek().equals(seq.peek())){
+                System.out.println(stack+"---------"+seq+"---------"+"匹配");
+                stack.pop();
+                seq.pop();
+            }
+            if(!stack.empty()) {
+                String k = stack.peek();
+                if (analyzeTable.containsKey(k) && analyzeTable.get(k).containsKey(seq.peek())) {
+                    System.out.println(stack + "---------" + seq + "---------" + analyzeTable.get(k).get(seq.peek()));
+                    stack.pop();
+                    for (int i = analyzeTable.get(k).get(seq.peek()).size() - 1; i >= 2; i--) {
+                        stack.push(analyzeTable.get(k).get(seq.peek()).get(i));
+                        if (stack.peek().equals("ε")) stack.pop();
+                    }
+                }
+                else{
+                    System.out.println("语法错误！");
+                    break;
+                }
+            }else{
+                System.out.println("语法错误！");
+                break;
+            }
+
+        }
     }
 
     public static void getInput(){
@@ -33,6 +91,10 @@ public class Main {
 //                "L -> T",
 //                "T -> F + F",
 //                "F -> b L a | i | ε",
+                //样例
+//                "S -> D b B",
+//                "D -> d | ε",
+//                "B -> a | B b a | ε",
                 //样例
         };
         for (String s : input) {
@@ -56,7 +118,7 @@ public class Main {
     public static void sout(int key){
         switch (key){
             case 1:{
-                System.out.println("输入语法如下：");
+                System.out.println("输入语法如下:");
                 for (ArrayList<String> strings : grammar) {
                     for (String s : strings) {
                         System.out.print(s+" ");
@@ -67,7 +129,7 @@ public class Main {
                 break;
             }
             case 2:{
-                System.out.println("消除左递归之后：");
+                System.out.println("消除左递归之后:");
                 for (ArrayList<String> strings : grammar) {
                     for (String s : strings) {
                         System.out.print(s+" ");
@@ -78,7 +140,7 @@ public class Main {
                 break;
             }
             case 3:{
-                System.out.println("提取左公因子之后：");
+                System.out.println("提取左公因子之后:");
                 for (ArrayList<String> strings : grammar) {
                     for (String s : strings) {
                         System.out.print(s+" ");
@@ -89,7 +151,7 @@ public class Main {
                 break;
             }
             case 4:{
-                System.out.println("First集和：");
+                System.out.println("First集和:");
                 for (ArrayList<String> strings : grammar) {
                     System.out.println(strings.get(0)+"=" + firstCollection.get(strings.get(0)));
                 }
@@ -97,14 +159,43 @@ public class Main {
                 break;
             }
             case 5:{
-                System.out.println("Follow集和：");
+                System.out.println("Follow集和:");
                 for (ArrayList<String> strings : grammar) {
                     System.out.println(strings.get(0)+"="+followCollection.get(strings.get(0)));
                 }
                 System.out.println();
                 break;
             }
+            case 6:{
+                System.out.println("Select集和:");
+                for (int i = 0; i < selectGrammar.size(); i++) {
+                    System.out.println(i+ " : "+selectCollection.get(i));
+                }
+                System.out.println();
+                break;
+            }
+            case 7:{
+                System.out.println("单独语法：");
+                for (ArrayList<String> strings : selectGrammar) {
+                    System.out.println(strings);
+                }
+                System.out.println();
+                break;
+            }
+            case 8:{
+                System.out.println("分析表：");
+                for (ArrayList<String> strings : grammar) {
+                    String key1=strings.get(0);
+                    System.out.print(key1+":   ");
+                    for (String key2 : analyzeTable.get(key1).keySet()) {
+                        System.out.print(key2+ "=" + analyzeTable.get(key1).get(key2)+"   ");
+                    }
+                    System.out.println();
+                }
+                break;
+            }
             default:
+                System.out.println("计科1807-董昌通-2018040511");
         }
     }
 
@@ -345,7 +436,67 @@ public class Main {
             }
         }
     }
-    public static void firstAndFollow(){
+
+    public static void getSelectCollection(){
+        for (ArrayList<String> gram : grammar) {
+            for (ArrayList<String> strings : grammarMap.get(gram.get(0))) {
+                ArrayList<String> toAdd=new ArrayList<>();
+                toAdd.add(gram.get(0));
+                toAdd.add("->");
+                toAdd.addAll(strings);
+                selectGrammar.add(toAdd);
+            }
+        }
+        sout(7);
+        for (int i = 0; i < selectGrammar.size(); i++) {
+            ArrayList<String> toAdd=new ArrayList<>();
+            int k=2;
+            boolean isEpsilon=true;
+            while (k<selectGrammar.get(i).size()){
+                String head=selectGrammar.get(i).get(k);
+                k++;
+                if(Character.isUpperCase(head.charAt(0))){
+                    toAdd.addAll(firstCollection.get(head));
+                    if(toAdd.contains("ε")){
+                        toAdd.remove("ε");
+                    }else {
+                        isEpsilon=false;
+                        break;
+                    }
+                }else if(head.equals("ε")){
+                    continue;
+                }
+                else{
+                    toAdd.add(head);
+                    isEpsilon=false;
+                    break;
+                }
+            }
+            if(isEpsilon) toAdd.addAll(followCollection.get(selectGrammar.get(i).get(0)));
+            selectCollection.put(i,toAdd);
+        }
+    }
+
+    public static void getAnalyzeTable() {
+        for (String key : grammarMap.keySet()) {
+            HashMap<String,ArrayList<String>> toAdd=new HashMap<>();
+            analyzeTable.put(key,toAdd);
+        }
+        for (int i = 0; i < selectGrammar.size(); i++) {
+            String key1=selectGrammar.get(i).get(0);
+            for (String s : selectCollection.get(i)) {
+                if(analyzeTable.containsKey(key1)){
+                    analyzeTable.get(key1).put(s,selectGrammar.get(i));
+                }else {
+                    HashMap<String,ArrayList<String>> toAdd=new HashMap<>();
+                    toAdd.put(s,selectGrammar.get(i));
+                    analyzeTable.put(key1,toAdd);
+                }
+            }
+        }
+    }
+
+    public static void firstFollowSelect(){
         //计算first集和
         int k=5;
         while (k-->0) {
@@ -363,5 +514,12 @@ public class Main {
             followCollection.put(key,new ArrayList<>(new HashSet<>(followCollection.get(key))));
         }
         sout(5);
+        //计算select集和
+        getSelectCollection();
+        sout(6);
+        //得到分析表
+        getAnalyzeTable();
+        sout(8);
     }
+
 }
